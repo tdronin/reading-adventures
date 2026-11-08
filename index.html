@@ -329,6 +329,32 @@ function toast(t){
   const d=document.createElement("div"); d.className="toast"; d.textContent=t;
   document.body.appendChild(d); setTimeout(()=>d.remove(),1500);
 }
+/* instant feedback for quiz taps: chime right away, don't wait for speech */
+let actx=null, navId=0;
+function ding(ok){
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==="suspended") actx.resume();
+    const t=actx.currentTime;
+    (ok?[660,990]:[260,200]).forEach((f,i)=>{
+      const o=actx.createOscillator(), g=actx.createGain(), s0=t+i*.11;
+      o.type=ok?"sine":"triangle"; o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,s0); g.gain.exponentialRampToValueAtTime(.35,s0+.02); g.gain.exponentialRampToValueAtTime(.0001,s0+.28);
+      o.connect(g); g.connect(actx.destination); o.start(s0); o.stop(s0+.3);
+    });
+  }catch(e){}
+}
+function answerRight(el,msg,view,arg){
+  if(el.closest(".choices")?.dataset.won) return;
+  const box=el.closest(".choices"); if(box) box.dataset.won="1";
+  stopListening(); hush(); el.classList.add("right"); ding(true); addStar(1,praise()); say(msg,0.9);
+  const my=navId;
+  setTimeout(()=>{ if(my===navId) views[view](arg); },1200);   // next question queues its prompt after the praise
+}
+function answerWrong(el,msg){
+  if(el.closest(".choices")?.dataset.won) return;
+  hush(); el.classList.add("wrong"); ding(false); say(msg,0.9);
+}
 const praise=()=>["Great job!","Super reading!","You did it!","Awesome!","High five!","Way to go, Thomas!"][Math.floor(Math.random()*6)];
 
 /* ---------- helpers ---------- */
@@ -345,7 +371,7 @@ const clean=w=>w.replace(/[^A-Za-z'\-]/g,"");
 
 /* ---------- router ---------- */
 const views={home,stories,letters,sight,calendar,counting,jar};
-function go(v,arg){ stopListening(); hush(); views[v](arg); }
+function go(v,arg){ navId++; stopListening(); hush(); views[v](arg); }
 
 /* ---------- HOME ---------- */
 function home(){
@@ -530,8 +556,8 @@ function letters(mode="grid"){
     const ask=()=>say(`Find the letter ${ans}.`);
     ask(); document.getElementById("again").onclick=ask;
     document.querySelectorAll(".choice").forEach(c=>c.onclick=()=>{
-      if(c.dataset.v===ans){c.classList.add("right");addStar(1,praise());say(`Yes! That is ${ans}!`).then(()=>go("letters","find"))}
-      else{c.classList.add("wrong");say(`That is ${c.dataset.v}. Try again!`)}
+      if(c.dataset.v===ans) answerRight(c,`Yes! ${ans}!`,"letters","find");
+      else answerWrong(c,`That is ${c.dataset.v}. Try again!`);
     });
   }
 }
@@ -568,8 +594,8 @@ function sight(mode="cards"){
     const ask=()=>say(`Find the word: ${ans}.`);
     ask(); document.getElementById("again").onclick=ask;
     document.querySelectorAll(".choice").forEach(c=>c.onclick=()=>{
-      if(c.dataset.v===ans){c.classList.add("right");addStar(1,praise());say(`Yes! ${ans}!`).then(()=>go("sight","find"))}
-      else{c.classList.add("wrong");say(`That says ${c.dataset.v}. Try again!`)}
+      if(c.dataset.v===ans) answerRight(c,`Yes! ${ans}!`,"sight","find");
+      else answerWrong(c,`That says ${c.dataset.v}. Try again!`);
     });
   }
 }
@@ -666,11 +692,11 @@ function calendar(mode="days"){
     const ask=()=>say(Q.q); ask(); document.getElementById("again").onclick=ask;
     document.getElementById("sayans").onclick=(ev)=>voiceAnswer(ev.currentTarget,
       hw=>hw.some(x=>sameWord(x,Q.a)),
-      ()=>{document.querySelector(`.choice[data-v="${Q.a}"]`).classList.add("right");addStar(1,praise());say(`Yes! ${Q.a}!`).then(()=>go("calendar","quiz"))},
+      ()=>answerRight(document.querySelector(`.choice[data-v="${Q.a}"]`),`Yes! ${Q.a}!`,"calendar","quiz"),
       "Try again!");
     document.querySelectorAll(".choice").forEach(c=>c.onclick=()=>{
-      if(c.dataset.v===Q.a){c.classList.add("right");addStar(1,praise());say(`Yes! ${Q.a}!`).then(()=>go("calendar","quiz"))}
-      else{c.classList.add("wrong");say(`Not ${c.dataset.v}. Try again!`)}
+      if(c.dataset.v===Q.a) answerRight(c,`Yes! ${Q.a}!`,"calendar","quiz");
+      else answerWrong(c,`Not ${c.dataset.v}. Try again!`);
     });
   }
 }
@@ -695,12 +721,12 @@ function counting(){
   const ch=document.getElementById("ch");
   ch.innerHTML=shuffle([...opts]).map(o=>`<button class="choice" style="font-size:56px;min-width:120px" data-v="${o}">${o}</button>`).join("");
   ch.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{
-    if(+b.dataset.v===n){b.classList.add("right");addStar(1,praise());say(`Yes! ${n}!`).then(()=>go("counting"))}
-    else{b.classList.add("wrong");say("Let's count again!")}
+    if(+b.dataset.v===n) answerRight(b,`Yes! ${n}!`,"counting");
+    else answerWrong(b,"Let's count again!");
   });
   document.getElementById("sayans").onclick=(ev)=>voiceAnswer(ev.currentTarget,
     hw=>hw.some(x=>x===String(n)||x===NUMW[n]||(n===2&&(x==="to"||x==="too"))||(n===4&&x==="for")||(n===8&&x==="ate")),
-    ()=>{ch.querySelector(`.choice[data-v="${n}"]`).classList.add("right");addStar(1,praise());say(`Yes! ${n}!`).then(()=>go("counting"))},
+    ()=>answerRight(ch.querySelector(`.choice[data-v="${n}"]`),`Yes! ${n}!`,"counting"),
     "Let's count again!");
 }
 
