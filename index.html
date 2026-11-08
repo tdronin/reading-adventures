@@ -138,6 +138,13 @@
   .word.miss::after{background:var(--orange)}
   .big-btn.mic{background:var(--red);box-shadow:0 6px 0 #c23b3b}
   .big-btn.mic.live{animation:pulse 1s infinite}
+  /* no-mic mode (home-screen app, or mic failed): hide 🎤, show grown-up tap buttons */
+  .nomic-only{display:none!important}
+  body.nomic .nomic-only{display:inline-block!important}
+  body.nomic .mic, body.nomic .mic-only{display:none!important}
+  .big-btn.tapturn{background:var(--orange);box-shadow:0 6px 0 #c9621f}
+  .big-btn.tapturn.live{animation:pulse 1s infinite}
+  .seq button.oops{animation:shake .35s}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
   #micbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#fff;border-radius:999px;padding:12px 26px;
           font-size:24px;box-shadow:0 10px 30px rgba(60,40,140,.2);z-index:40;display:none;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -229,7 +236,10 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------- microphone (speech recognition) ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let micBlocked = !SR, curListen = null;
+// Apple disables speech recognition in home-screen web apps, so use tap mode there.
+const STANDALONE = navigator.standalone===true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+let micBlocked = !SR || STANDALONE, curListen = null;
+if(micBlocked) document.body.classList.add("nomic");
 const NUMW=["zero","one","two","three","four","five","six","seven","eight","nine","ten"];
 const SOUNDALIKE={to:["two","too"],i:["eye","hi","aye"],see:["sea","c"],a:["uh","ah"],in:["and","an","n"],no:["know"],red:["read"],
   ski:["sky","skee"],for:["four","fore"],hop:["hot","hob","pop"],log:["dog","lock","logs"],bug:["bud","buck","bugs"],my:["mine","mai"],
@@ -257,8 +267,8 @@ function sameWord(heard,target){
 const splitWords=t=>t.split(/\s+/).map(norm).filter(Boolean);
 function micBar(html){const b=document.getElementById("micbar"); if(html==null){b.classList.remove("show");return} b.innerHTML=html; b.classList.add("show");}
 function micHelp(){
-  toast("🎤 Mic not available here");
-  say("The microphone does not work here. Ask a grown up for help.");
+  micBlocked=true; document.body.classList.add("nomic");
+  toast("👍 Let's use the tap buttons!");
 }
 function stopListening(){ if(curListen){ curListen.stop(); } }
 /* listen({onText(fullText), maxMs, onStop(reason, text)}) -> controller {stop(success)} */
@@ -379,7 +389,7 @@ function home(){
   const hi = hour<12?"Good morning":hour<17?"Good afternoon":"Good evening";
   h(`<div class="bar"><div></div><div></div><button class="jarchip" onclick="go('jar')">⭐ <span class="jarcount">${stars}</span></button></div>
   <div class="hello"><h1>${hi}, Thomas! 👋</h1><p>What do you want to learn today?</p></div>
-  ${!SR?`<div class="note">Grown-ups: the 🎤 buttons need Safari on iPad (iOS 14.5+) with Siri &amp; Dictation turned on. Everything else works here.</div>`:""}
+  ${!SR&&!STANDALONE?`<div class="note">Grown-ups: the 🎤 buttons need Safari on iPad (iOS 14.5+) with Siri &amp; Dictation turned on. Everything else works here.</div>`:""}
   <div class="grid">
     <button class="tile" style="background:var(--purple)" onclick="go('stories')"><span class="em">📖</span>Read Along<small>Stories to read</small></button>
     <button class="tile" style="background:var(--pink)" onclick="go('letters')"><span class="em">🔤</span>Letters<small>A, B, C!</small></button>
@@ -406,6 +416,7 @@ views.stories_read=function(id){
       <div class="row">
         <button class="big-btn" id="readme">🔊 Read to me</button>
         <button class="big-btn mic" id="micread">🎤 I'll read it!</button>
+        <button class="big-btn green nomic-only" id="readok">👍 Read it!</button>
         <button class="big-btn pink" id="myturn">☝️ Touch &amp; read</button>
       </div>
       <div class="tip" id="tip">Slide the bar under the words to read along! Tap any word to hear it.</div>
@@ -512,6 +523,13 @@ views.stories_read=function(id){
           }
         }});
     };
+    let readOk=false;
+    document.getElementById("readok").onclick=async()=>{     // grown-up confirms Thomas read the sentence
+      if(readOk) return; readOk=true; stopListening(); hush(); turn=false;
+      setSlide(words.length-1,{speak:false}); slideWon=true;
+      words.forEach(w=>{w.classList.remove("on","dim","miss");w.classList.add("done")});
+      ding(true); addStar(2,"Great reading! ⭐⭐"); await say(praise());
+    };
     document.getElementById("myturn").onclick=()=>{
       stopListening(); hush(); turn=true; nextIdx=0; resetSlide(); words.forEach(w=>{w.classList.remove("on","done");w.classList.add("dim")});
       say("Your turn! Touch each word and read it.");
@@ -540,7 +558,10 @@ function letters(mode="grid"){
       lc.style.display="block";
       lc.innerHTML=`<div class="center"><div class="letter-big">${k}<span>${k.toLowerCase()}</span></div>
         <div style="font-size:90px">${em}</div><div class="title" style="font-size:44px"><b style="color:var(--pink)">${word[0]}</b>${word.slice(1)}</div>
-        <div class="row"><button class="big-btn mic" id="saylet">🎤 Say the letter</button></div></div>`;
+        <div class="row"><button class="big-btn mic" id="saylet">🎤 Say the letter</button>
+          <button class="big-btn green nomic-only" id="saidlet">👍 Said it!</button></div></div>`;
+      let said=false;
+      document.getElementById("saidlet").onclick=()=>{ if(said)return; said=true; hush(); ding(true); addStar(1,praise()); say(`Yes! ${k}!`); };
       document.getElementById("saylet").onclick=(ev)=>voiceAnswer(ev.currentTarget,
         hw=>hw.some(x=>LETTER_NAMES[k].includes(x)||x===k.toLowerCase()||sameWord(x,word)),
         ()=>{addStar(1,praise());say(`Yes! ${k}!`)}, `This letter is ${k}. Try again!`);
@@ -611,17 +632,43 @@ function calendar(mode="days"){
     h(bar("Days & Months 📅")+tabs+`<div class="row" style="margin:0 0 18px">
         <button class="big-btn" id="sing">🎵 Say them all</button>
         <button class="big-btn mic" id="recite">🎤 My turn!</button>
+        <button class="big-btn tapturn nomic-only" id="tapturn">👆 My turn!</button>
         <button class="big-btn ghost ${hide?'sel':''}" id="hidebtn">${hide?'🙈 Words hidden':'👀 Hide the words'}</button></div>
-      <div class="tip" id="tip" style="margin:-6px 0 16px">${mode==='days'?'Press 🎤 and say the days of the week — they light up as you say them!':'Press 🎤 and say the months in order — they light up as you say them!'}</div>
+      <div class="tip" id="tip" style="margin:-6px 0 16px"><span class="mic-only">${mode==='days'?'Press 🎤 and say the days of the week — they light up as you say them!':'Press 🎤 and say the months in order — they light up as you say them!'}</span><span class="nomic-only">Press 👆 My turn! — then say each ${mode==='days'?'day':'month'} out loud and tap it as you go!</span></div>
       <div class="seq ${mode==='months'?'months':''} ${hide?'hide':''}" id="seq">${list.map((x,i)=>`<button style="background:${COLORS[i]}" data-i="${i}">
         <span class="n">${mode==='months'?MONTH_EM[i]:i+1}</span><span class="nm">${x}</span>${i===cur?`<span class="today">${mode==='days'?'today':'now'}</span>`:''}</button>`).join("")}</div>`);
     const btns=[...document.querySelectorAll(".seq button")];
     const clearSeq=()=>btns.forEach(x=>x.classList.remove("on","done","miss","dim","peek"));
-    btns.forEach(b=>b.onclick=()=>{stopListening();hush();btns.forEach(x=>x.classList.remove("on","peek"));b.classList.add("on","peek");say(list[b.dataset.i]).then(()=>b.classList.remove("on","peek"))});
+    let tapping=false, tapK=0, tapOrder=null;
+    btns.forEach(b=>b.onclick=()=>{ if(tapping) return tapStep(b); stopListening();hush();btns.forEach(x=>x.classList.remove("on","peek"));b.classList.add("on","peek");say(list[b.dataset.i]).then(()=>b.classList.remove("on","peek"))});
     document.getElementById("sing").onclick=async()=>{
       stopListening(); hush(); clearSeq(); const my=runId;
       for(const b of btns){ if(my!==runId)return; b.classList.add("on","peek"); await say(list[b.dataset.i],0.9); b.classList.remove("on","peek"); }
       if(my===runId){ addStar(1,praise()); }
+    };
+    // Tap test (no mic): say each one and tap it in order. Days may start Sunday or Monday.
+    const tapBtn=document.getElementById("tapturn"), what=mode==="days"?"days of the week":"months";
+    function tapStep(b){
+      const i=+b.dataset.i;
+      const fits=(tapOrder?[tapOrder]:orders).find(o=>o[tapK]===i);
+      if(!fits){ ding(false); b.classList.remove("oops"); void b.offsetWidth; b.classList.add("oops"); return; }
+      tapOrder=fits; tapK++; ding(true); b.classList.remove("dim"); b.classList.add("done");
+      if(tapK===list.length) endTap();
+    }
+    async function endTap(){
+      tapping=false; tapBtn.classList.remove("live"); tapBtn.textContent="👆 My turn!";
+      const tip=document.getElementById("tip");
+      if(tapK===list.length){ addStar(2,"You said them all! ⭐⭐"); await say(`Wow! You said all the ${what}! `+praise()); return; }
+      const order=tapOrder||orders[0];
+      order.slice(tapK).forEach(i=>{ btns[i].classList.remove("dim"); btns[i].classList.add("miss","peek"); });
+      if(tapK>0){ addStar(1,"Good job! ⭐"); tip.textContent="Yellow ones need practice — tap them to hear, then try again!"; await say("Good job! Let's practice the yellow ones."); }
+      else { tip.textContent="Tap 🎵 Say them all to practice, then try again!"; }
+    }
+    tapBtn.onclick=()=>{
+      if(tapping) return endTap();
+      hush(); clearSeq(); btns.forEach(b=>b.classList.add("dim"));
+      tapping=true; tapK=0; tapOrder=null; tapBtn.classList.add("live"); tapBtn.textContent="✋ I'm done";
+      say(mode==="days"?"Your turn! Say each day and tap it.":"Your turn! Say each month and tap it.");
     };
     document.getElementById("hidebtn").onclick=()=>{ store.set("hideSeq",!hide); go("calendar",mode); };
     // Recite test: kid says the list out loud, each one lights up as it's heard.
