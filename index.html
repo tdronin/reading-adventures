@@ -56,10 +56,18 @@
   .row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:22px}
 
   /* reading */
-  .pic{font-size:120px;text-align:center;line-height:1.1;margin:4px 0 10px}
-  .sentence{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;font-size:58px;line-height:1.25;padding:10px 0 4px}
-  .word{position:relative;padding:4px 10px 16px;border-radius:16px;background:transparent;font-size:inherit;font-family:inherit}
-  .word::after{content:"";position:absolute;left:10px;right:10px;bottom:4px;height:9px;border-radius:9px;background:#e7e2fb}
+  .pic{font-size:100px;text-align:center;line-height:1.1;margin:0 0 6px}
+  .sentence{position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:18px 26px;font-size:clamp(56px,8.6vw,96px);line-height:1.2;padding:10px 0 40px}
+  .word{position:relative;padding:4px 10px 22px;border-radius:18px;background:transparent;font-size:inherit;font-family:inherit}
+  .word::after{content:"";position:absolute;left:8px;right:8px;bottom:4px;height:14px;border-radius:14px;background:#e7e2fb;transition:background .15s}
+  /* slider handle */
+  .slide{position:absolute;width:76px;height:60px;margin:-30px 0 0 -38px;border-radius:20px;background:#fff;border:4px solid var(--purple);
+         box-shadow:0 6px 0 #cfc5ff,0 8px 20px rgba(60,40,140,.25);display:grid;place-items:center;touch-action:none;z-index:5;
+         transition:left .18s,top .18s;font-size:0}
+  .slide::before{content:"";width:26px;height:24px;background:repeating-linear-gradient(90deg,var(--purple) 0 5px,transparent 5px 10px)}
+  .slide.drag{transition:none;transform:scale(1.12)}
+  .slide.hint{animation:nudge 1.4s ease-in-out 2}
+  @keyframes nudge{50%{margin-left:-8px}}
   .word.on{background:#fff4c2}
   .word.on::after,.word.done::after{background:var(--purple)}
   .word.dim{opacity:.55}
@@ -91,6 +99,12 @@
   .seq button{display:flex;align-items:center;gap:16px;border-radius:22px;padding:12px 22px;font-family:Fredoka;font-size:34px;color:#fff;text-align:left;box-shadow:0 5px 0 rgba(0,0,0,.15);transition:transform .15s}
   .seq button .n{background:rgba(255,255,255,.3);border-radius:50%;width:48px;height:48px;display:grid;place-items:center;font-size:24px}
   .seq button.on{transform:scale(1.06);outline:6px solid var(--yellow)}
+  .seq button .nm{border-radius:12px;padding:0 6px;transition:all .2s}
+  .seq.hide button:not(.done):not(.peek) .nm{color:transparent;background:rgba(255,255,255,.35)}
+  .seq button.done{outline:6px solid var(--green)}
+  .seq button.miss{outline:6px dashed var(--yellow)}
+  .seq button.dim{opacity:.55}
+  .big-btn.sel{outline:5px solid var(--yellow)}
   .seq button .today{margin-left:auto;font-size:20px;background:#fff;color:var(--ink);border-radius:999px;padding:4px 12px}
   .months{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;max-width:none}
   .tabs{display:flex;gap:12px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
@@ -103,10 +117,10 @@
   .todaycard .mid{background:#fff4c2;outline:4px solid var(--yellow)}
 
   /* counting */
-  .count-area{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;min-height:180px;padding:10px}
-  .obj{font-size:76px;position:relative;background:transparent;border-radius:22px;padding:4px 8px}
-  .obj.counted{background:#fff4c2}
-  .obj .num{position:absolute;top:-6px;right:-4px;background:var(--purple);color:#fff;border-radius:50%;width:36px;height:36px;display:grid;place-items:center;font-family:Fredoka;font-size:20px}
+  .count-area{display:flex;flex-wrap:wrap;gap:18px 22px;justify-content:center;min-height:240px;padding:16px 10px}
+  .obj{font-size:clamp(96px,13vw,140px);line-height:1.1;position:relative;background:transparent;border-radius:28px;padding:6px 12px}
+  .obj.counted{background:#fff4c2;outline:5px solid var(--yellow)}
+  .obj .num{position:absolute;top:-10px;right:-8px;background:var(--purple);color:#fff;border-radius:50%;width:54px;height:54px;display:grid;place-items:center;font-family:Fredoka;font-size:30px;line-height:1}
 
   /* sight words */
   .sight{font-size:130px;text-align:center;font-weight:700;color:var(--purple);margin:10px 0}
@@ -130,7 +144,7 @@
   #micbar.show{display:block}
   #micbar b{color:var(--red)}
   .note{background:#fff4c2;border-radius:20px;padding:14px 18px;font-size:19px;margin:0 auto 18px;max-width:760px;text-align:center}
-  @media (max-width:700px){ .sentence{font-size:40px} .pic{font-size:90px} .hello h1{font-size:38px} }
+  @media (max-width:700px){ .sentence{font-size:44px} .pic{font-size:90px} .hello h1{font-size:38px} }
 </style>
 </head>
 <body>
@@ -362,13 +376,13 @@ views.stories_read=function(id){
     const pg=s.pages[p];
     h(bar(s.title)+`<div class="card">
       <div class="pic">${pg.pic}</div>
-      <div class="sentence" id="sent">${tokens(pg.text).map((w,i)=>`<button class="word" data-i="${i}">${w}</button>`).join("")}</div>
+      <div class="sentence" id="sent">${tokens(pg.text).map((w,i)=>`<button class="word" data-i="${i}">${w}</button>`).join("")}<div class="slide hint" id="slide" aria-label="Slide to read">|||</div></div>
       <div class="row">
         <button class="big-btn" id="readme">🔊 Read to me</button>
         <button class="big-btn mic" id="micread">🎤 I'll read it!</button>
         <button class="big-btn pink" id="myturn">☝️ Touch &amp; read</button>
       </div>
-      <div class="tip" id="tip">Tap any word to hear it. Press 🎤 and read out loud — the words light up as you say them!</div>
+      <div class="tip" id="tip">Slide the bar under the words to read along! Tap any word to hear it.</div>
       <div class="row" style="align-items:center">
         <button class="big-btn ghost" id="prev" ${p===0?'style="visibility:hidden"':''}>⬅</button>
         <div class="pager">${s.pages.map((_,i)=>`<span class="dot ${i===p?'cur':''}"></span>`).join("")}</div>
@@ -376,6 +390,48 @@ views.stories_read=function(id){
       </div></div>`);
     const words=[...document.querySelectorAll(".word")];
     let turn=false, nextIdx=0;
+    /* ---- slide-to-read bar ---- */
+    const sent=document.getElementById("sent"), knob=document.getElementById("slide");
+    let slideAt=-1, slideWon=false;
+    const lineY=el=>el.offsetTop+el.offsetHeight-11;
+    function placeKnob(x,y){ knob.style.left=x+"px"; knob.style.top=y+"px"; }
+    function setSlide(i,{speak=true,move=true}={}){
+      i=Math.max(-1,Math.min(words.length-1,i));
+      words.forEach((w,k)=>{ w.classList.remove("dim","miss"); w.classList.toggle("done",k<i); w.classList.toggle("on",k===i); });
+      if(move){ const w=words[Math.max(0,i)]; placeKnob(i<0? w.offsetLeft-10 : w.offsetLeft+w.offsetWidth+4, lineY(w)); }
+      if(speak && i>slideAt && i>=0){ hush(); say(clean(words[i].textContent),0.8); }
+      slideAt=i;
+    }
+    function wordAt(cx,cy){            // which word is the finger pointing at (sentence coords)?
+      let best=null, bd=1e9;
+      words.forEach(w=>{ const d=Math.abs(lineY(w)-cy); if(d<bd-4){bd=d;best=lineY(w)} });
+      const line=words.map((w,k)=>[w,k]).filter(([w])=>Math.abs(lineY(w)-best)<4);
+      let idx=line[0][1]-1;
+      for(const [w,k] of line){ if(cx>=w.offsetLeft+w.offsetWidth*0.35) idx=k; }
+      return {idx, y:best};
+    }
+    knob.addEventListener("pointerdown",e=>{
+      e.preventDefault(); stopListening(); hush(); turn=false; knob.setPointerCapture(e.pointerId);
+      knob.classList.remove("hint"); knob.classList.add("drag");
+      if(slideAt>=words.length-1){ slideWon=false; setSlide(-1,{speak:false}); }
+    });
+    knob.addEventListener("pointermove",e=>{
+      if(!knob.classList.contains("drag")) return;
+      const r=sent.getBoundingClientRect(), cx=e.clientX-r.left, cy=e.clientY-r.top;
+      const {idx,y}=wordAt(cx,cy);
+      placeKnob(Math.max(0,Math.min(sent.offsetWidth,cx)), y);
+      if(idx!==slideAt) setSlide(idx,{move:false});
+    });
+    const endDrag=()=>{
+      if(!knob.classList.contains("drag")) return;
+      knob.classList.remove("drag"); setSlide(slideAt,{speak:false});
+      if(slideAt===words.length-1 && !slideWon){ slideWon=true;
+        setTimeout(async()=>{ words.forEach(w=>w.classList.add("done")); addStar(1,praise()); await say(pg.text,0.85); },700); }
+    };
+    knob.addEventListener("pointerup",endDrag); knob.addEventListener("pointercancel",endDrag);
+    const resetSlide=()=>{ slideAt=-1; slideWon=false; const w=words[0]; placeKnob(w.offsetLeft-10,lineY(w)); };
+    resetSlide(); (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{ if(document.body.contains(knob)) setSlide(slideAt,{speak:false}); });
+    window.onresize=()=>{ if(document.body.contains(knob)) setSlide(slideAt,{speak:false}); };
     words.forEach((el,i)=>el.onclick=()=>{
       if(turn){
         if(i===nextIdx){ el.classList.remove("dim"); el.classList.add("done"); nextIdx++; say(clean(el.textContent));
@@ -385,18 +441,18 @@ views.stories_read=function(id){
     });
     document.getElementById("readme").onclick=async()=>{
       stopListening(); hush(); turn=false; const my=runId;
-      words.forEach(w=>w.classList.remove("on","done","dim","miss"));
-      for(const el of words){
+      knob.classList.remove("hint"); setSlide(-1,{speak:false});
+      for(let k=0;k<words.length;k++){
         if(my!==runId) return;
-        el.classList.add("on"); await say(clean(el.textContent),0.8); el.classList.remove("on"); el.classList.add("done");
+        setSlide(k,{speak:false}); await say(clean(words[k].textContent),0.8);
         await wait(120);
       }
-      if(my===runId){ await wait(300); words.forEach(w=>w.classList.remove("done")); say(pg.text,0.85); }
+      if(my===runId){ await wait(300); words.forEach(w=>w.classList.remove("done","on")); resetSlide(); say(pg.text,0.85); }
     };
     document.getElementById("micread").onclick=(ev)=>{
       const btn=ev.currentTarget;
       if(curListen){ stopListening(); return; }            // tap again = "I'm done"
-      turn=false; const target=tokens(pg.text).map(clean);
+      turn=false; resetSlide(); const target=tokens(pg.text).map(clean);
       words.forEach(w=>{w.classList.remove("on","done","miss");w.classList.add("dim")});
       btn.classList.add("live"); btn.textContent="✋ I'm done";
       let result={next:0,missed:new Set()}, won=false;
@@ -431,7 +487,7 @@ views.stories_read=function(id){
         }});
     };
     document.getElementById("myturn").onclick=()=>{
-      stopListening(); hush(); turn=true; nextIdx=0; words.forEach(w=>{w.classList.remove("on","done");w.classList.add("dim")});
+      stopListening(); hush(); turn=true; nextIdx=0; resetSlide(); words.forEach(w=>{w.classList.remove("on","done");w.classList.add("dim")});
       say("Your turn! Touch each word and read it.");
     };
     document.getElementById("prev").onclick=()=>{hush();p--;render()};
@@ -525,15 +581,60 @@ function calendar(mode="days"){
     `<button class="${mode===k?'sel':''}" onclick="go('calendar','${k}')">${l}</button>`).join("")}</div>`;
   if(mode==="days"||mode==="months"){
     const list=mode==="days"?DAYS:MONTHS, cur=mode==="days"?d:m;
-    h(bar("Days & Months 📅")+tabs+`<div class="row" style="margin:0 0 18px"><button class="big-btn" id="sing">🎵 Say them all</button></div>
-      <div class="seq ${mode==='months'?'months':''}">${list.map((x,i)=>`<button style="background:${COLORS[i]}" data-i="${i}">
-        <span class="n">${mode==='months'?MONTH_EM[i]:i+1}</span>${x}${i===cur?`<span class="today">${mode==='days'?'today':'now'}</span>`:''}</button>`).join("")}</div>`);
+    const hide=store.get("hideSeq",false);
+    h(bar("Days & Months 📅")+tabs+`<div class="row" style="margin:0 0 18px">
+        <button class="big-btn" id="sing">🎵 Say them all</button>
+        <button class="big-btn mic" id="recite">🎤 My turn!</button>
+        <button class="big-btn ghost ${hide?'sel':''}" id="hidebtn">${hide?'🙈 Words hidden':'👀 Hide the words'}</button></div>
+      <div class="tip" id="tip" style="margin:-6px 0 16px">${mode==='days'?'Press 🎤 and say the days of the week — they light up as you say them!':'Press 🎤 and say the months in order — they light up as you say them!'}</div>
+      <div class="seq ${mode==='months'?'months':''} ${hide?'hide':''}" id="seq">${list.map((x,i)=>`<button style="background:${COLORS[i]}" data-i="${i}">
+        <span class="n">${mode==='months'?MONTH_EM[i]:i+1}</span><span class="nm">${x}</span>${i===cur?`<span class="today">${mode==='days'?'today':'now'}</span>`:''}</button>`).join("")}</div>`);
     const btns=[...document.querySelectorAll(".seq button")];
-    btns.forEach(b=>b.onclick=()=>{hush();btns.forEach(x=>x.classList.remove("on"));b.classList.add("on");say(list[b.dataset.i]).then(()=>b.classList.remove("on"))});
+    const clearSeq=()=>btns.forEach(x=>x.classList.remove("on","done","miss","dim","peek"));
+    btns.forEach(b=>b.onclick=()=>{stopListening();hush();btns.forEach(x=>x.classList.remove("on","peek"));b.classList.add("on","peek");say(list[b.dataset.i]).then(()=>b.classList.remove("on","peek"))});
     document.getElementById("sing").onclick=async()=>{
-      hush(); const my=runId;
-      for(const b of btns){ if(my!==runId)return; b.classList.add("on"); await say(list[b.dataset.i],0.9); b.classList.remove("on"); }
+      stopListening(); hush(); clearSeq(); const my=runId;
+      for(const b of btns){ if(my!==runId)return; b.classList.add("on","peek"); await say(list[b.dataset.i],0.9); b.classList.remove("on","peek"); }
       if(my===runId){ addStar(1,praise()); }
+    };
+    document.getElementById("hidebtn").onclick=()=>{ store.set("hideSeq",!hide); go("calendar",mode); };
+    // Recite test: kid says the list out loud, each one lights up as it's heard.
+    // Days may start on Sunday or Monday; months start on January.
+    const orders = mode==="days" ? [[0,1,2,3,4,5,6],[1,2,3,4,5,6,0]] : [[...Array(12).keys()]];
+    const recite=document.getElementById("recite");
+    recite.onclick=()=>{
+      if(curListen){ stopListening(); return; }                    // tap again = "I'm done"
+      hush(); clearSeq(); btns.forEach(b=>b.classList.add("dim"));
+      recite.classList.add("live"); recite.textContent="✋ I'm done";
+      let best={next:0,missed:new Set(),order:orders[0]}, won=false;
+      listen({maxMs:mode==="days"?25000:40000,
+        onText(text){
+          const heard=splitWords(text);
+          best=orders.map(o=>({...alignWords(heard,o.map(i=>norm(list[i]))),order:o}))
+                     .sort((a,b)=>(b.next-2*b.missed.size)-(a.next-2*a.missed.size))[0];
+          btns.forEach(b=>b.classList.remove("on","done","miss")); btns.forEach(b=>b.classList.add("dim"));
+          best.order.forEach((di,k)=>{ const b=btns[di];
+            if(k<best.next){ b.classList.remove("dim"); b.classList.add(best.missed.has(k)?"miss":"done"); }
+            else if(k===best.next){ b.classList.remove("dim"); b.classList.add("on"); } });
+          if(best.next>=list.length && !won){ won=true; stopListening(); }
+        },
+        async onStop(reason){
+          recite.classList.remove("live"); recite.textContent="🎤 My turn!";
+          btns.forEach(b=>b.classList.remove("on","dim"));
+          if(reason==="unavailable"){ clearSeq(); return; }
+          const misses=[...best.missed]; for(let k=best.next;k<list.length;k++) misses.push(k);
+          misses.forEach(k=>{ const b=btns[best.order[k]]; b.classList.remove("done"); b.classList.add("miss","peek"); });
+          const what=mode==="days"?"days of the week":"months";
+          const tip=document.getElementById("tip");
+          if(!misses.length){ addStar(2,"You said them all! ⭐⭐"); await say(`Wow! You said all the ${what}! `+praise()); }
+          else if(best.next>0 && misses.length<=Math.ceil(list.length/3)){
+            addStar(1,"Good job! ⭐"); tip.textContent="Yellow ones need practice — tap them to hear, then try 🎤 again!";
+            await say(`Good job! You missed ${misses.map(k=>list[best.order[k]]).join(", and ")}.`);
+          } else {
+            tip.textContent="Tap 🎵 Say them all to practice, then try 🎤 again!";
+            await say(best.next===0?`I didn't hear the ${what}. Press the microphone and say them out loud!`:`Good try! Let's practice. Press Say them all, then try again.`);
+          }
+        }});
     };
   } else if(mode==="today"){
     const yest=DAYS[(d+6)%7], tom=DAYS[(d+1)%7];
