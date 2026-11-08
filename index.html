@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Thomas's Reading Adventures</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Reading">
+<meta name="theme-color" content="#5b3df5">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2b2350; --purple:#5b3df5; --purple-soft:#ece8ff; --cream:#fffaf0;
+    --pink:#ff7eb6; --yellow:#ffc93c; --green:#2ec27e; --blue:#3fa9f5; --orange:#ff8c42; --red:#ff5d5d;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{font-family:"Andika",system-ui,sans-serif;color:var(--ink);background:linear-gradient(160deg,#fdf6ff 0%,#eef6ff 100%);
+       -webkit-user-select:none;user-select:none;touch-action:manipulation;overflow-x:hidden}
+  button{font-family:inherit;color:inherit;border:none;cursor:pointer;touch-action:manipulation}
+  h1,h2,.title{font-family:"Fredoka",system-ui,sans-serif;margin:0}
+  #app{max-width:1080px;margin:0 auto;padding:20px 22px 40px;min-height:100%}
+
+  /* top bar */
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .back{background:#fff;border-radius:20px;padding:12px 20px;font-size:22px;font-weight:700;box-shadow:0 3px 0 #d9d2ff}
+  .back:active{transform:translateY(3px);box-shadow:none}
+  .jarchip{display:flex;align-items:center;gap:8px;background:#fff;border-radius:999px;padding:8px 18px;font-family:Fredoka;font-size:26px;box-shadow:0 3px 0 #ffe39a}
+  .bar h2{font-size:34px;text-align:center;flex:1}
+
+  /* home */
+  .hello{text-align:center;margin:10px 0 24px}
+  .hello h1{font-size:52px;color:var(--purple)}
+  .hello p{font-size:24px;margin:6px 0 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+  .tile{border-radius:30px;padding:26px 18px;text-align:center;color:#fff;font-family:Fredoka;font-size:30px;
+        box-shadow:0 8px 0 rgba(0,0,0,.15);transition:transform .08s}
+  .tile:active{transform:translateY(6px);box-shadow:0 2px 0 rgba(0,0,0,.15)}
+  .tile .em{font-size:72px;display:block;margin-bottom:6px}
+  .tile small{display:block;font-family:Andika;font-size:18px;opacity:.95;margin-top:4px}
+
+  .card{background:#fff;border-radius:32px;padding:28px;box-shadow:0 10px 30px rgba(60,40,140,.10)}
+  .center{text-align:center}
+  .big-btn{font-family:Fredoka;font-size:28px;border-radius:24px;padding:16px 28px;color:#fff;background:var(--purple);box-shadow:0 6px 0 #3a22b8}
+  .big-btn:active{transform:translateY(5px);box-shadow:0 1px 0 #3a22b8}
+  .big-btn.green{background:var(--green);box-shadow:0 6px 0 #1b8a57}
+  .big-btn.orange{background:var(--orange);box-shadow:0 6px 0 #c9621f}
+  .big-btn.pink{background:var(--pink);box-shadow:0 6px 0 #d14d8a}
+  .big-btn.ghost{background:var(--purple-soft);color:var(--purple);box-shadow:0 6px 0 #cfc5ff}
+  .row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+
+  /* reading */
+  .pic{font-size:120px;text-align:center;line-height:1.1;margin:4px 0 10px}
+  .sentence{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;font-size:58px;line-height:1.25;padding:10px 0 4px}
+  .word{position:relative;padding:4px 10px 16px;border-radius:16px;background:transparent;font-size:inherit;font-family:inherit}
+  .word::after{content:"";position:absolute;left:10px;right:10px;bottom:4px;height:9px;border-radius:9px;background:#e7e2fb}
+  .word.on{background:#fff4c2}
+  .word.on::after,.word.done::after{background:var(--purple)}
+  .word.dim{opacity:.55}
+  .pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;font-size:20px}
+  .dot{width:14px;height:14px;border-radius:50%;background:#d9d2ff}
+  .dot.cur{background:var(--purple)}
+  .story-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  .story-btn{background:#fff;border-radius:26px;padding:20px;text-align:center;font-family:Fredoka;font-size:26px;box-shadow:0 6px 0 #ddd6ff}
+  .story-btn .em{font-size:64px;display:block}
+  .story-btn .stars{font-size:20px;color:#e0a800;min-height:24px}
+  .tip{font-size:19px;text-align:center;color:#6b6290;margin-top:14px}
+
+  /* letters */
+  .abc{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px}
+  .abc button{aspect-ratio:1;border-radius:22px;font-family:Fredoka;font-size:52px;color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.15)}
+  .letter-big{font-family:Fredoka;font-size:170px;line-height:1;color:var(--purple)}
+  .letter-big span{color:var(--pink);font-size:130px;margin-left:16px}
+
+  /* choices */
+  .choices{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:20px}
+  .choice{min-width:180px;font-family:Fredoka;font-size:36px;background:#fff;border:4px solid #e3ddff;border-radius:24px;padding:18px 24px;box-shadow:0 6px 0 #e3ddff}
+  .choice.right{background:#d8f8e7;border-color:var(--green)}
+  .choice.wrong{background:#ffe1e1;border-color:var(--red);animation:shake .35s}
+  @keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  .q{font-family:Fredoka;font-size:38px;text-align:center}
+
+  /* days/months */
+  .seq{display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
+  .seq button{display:flex;align-items:center;gap:16px;border-radius:22px;padding:12px 22px;font-family:Fredoka;font-size:34px;color:#fff;text-align:left;box-shadow:0 5px 0 rgba(0,0,0,.15);transition:transform .15s}
+  .seq button .n{background:rgba(255,255,255,.3);border-radius:50%;width:48px;height:48px;display:grid;place-items:center;font-size:24px}
+  .seq button.on{transform:scale(1.06);outline:6px solid var(--yellow)}
+  .seq button .today{margin-left:auto;font-size:20px;background:#fff;color:var(--ink);border-radius:999px;padding:4px 12px}
+  .months{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;max-width:none}
+  .tabs{display:flex;gap:12px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+  .tabs button{font-family:Fredoka;font-size:24px;border-radius:999px;padding:10px 22px;background:#fff;box-shadow:0 4px 0 #ddd6ff}
+  .tabs button.sel{background:var(--purple);color:#fff;box-shadow:0 4px 0 #3a22b8}
+  .todaycard{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;text-align:center}
+  .todaycard div{border-radius:24px;padding:18px 10px;background:var(--purple-soft)}
+  .todaycard .lbl{font-size:20px;color:#6b6290}
+  .todaycard .val{font-family:Fredoka;font-size:34px}
+  .todaycard .mid{background:#fff4c2;outline:4px solid var(--yellow)}
+
+  /* counting */
+  .count-area{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;min-height:180px;padding:10px}
+  .obj{font-size:76px;position:relative;background:transparent;border-radius:22px;padding:4px 8px}
+  .obj.counted{background:#fff4c2}
+  .obj .num{position:absolute;top:-6px;right:-4px;background:var(--purple);color:#fff;border-radius:50%;width:36px;height:36px;display:grid;place-items:center;font-family:Fredoka;font-size:20px}
+
+  /* sight words */
+  .sight{font-size:130px;text-align:center;font-weight:700;color:var(--purple);margin:10px 0}
+
+  /* jar */
+  .jar{width:280px;height:340px;margin:10px auto;border:10px solid #b9d7ff;border-top-width:18px;border-radius:30px 30px 70px 70px;
+       background:rgba(255,255,255,.7);display:flex;flex-wrap:wrap-reverse;align-content:flex-start;justify-content:center;padding:12px;gap:2px;overflow:hidden;font-size:26px}
+  .burst{position:fixed;pointer-events:none;font-size:46px;z-index:50;animation:fly 1.1s ease-out forwards}
+  @keyframes fly{0%{opacity:1;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.4) rotate(200deg)}}
+  .toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:#fff;border-radius:30px;padding:24px 40px;font-family:Fredoka;font-size:44px;
+         box-shadow:0 20px 60px rgba(60,40,140,.25);z-index:60;animation:pop .3s ease-out}
+  @keyframes pop{from{transform:translate(-50%,-50%) scale(.5)}to{transform:translate(-50%,-50%) scale(1)}}
+  .muted{color:#6b6290}
+  .word.miss{background:#ffe7cc}
+  .word.miss::after{background:var(--orange)}
+  .big-btn.mic{background:var(--red);box-shadow:0 6px 0 #c23b3b}
+  .big-btn.mic.live{animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+  #micbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#fff;border-radius:999px;padding:12px 26px;
+          font-size:24px;box-shadow:0 10px 30px rgba(60,40,140,.2);z-index:40;display:none;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #micbar.show{display:block}
+  #micbar b{color:var(--red)}
+  .note{background:#fff4c2;border-radius:20px;padding:14px 18px;font-size:19px;margin:0 auto 18px;max-width:760px;text-align:center}
+  @media (max-width:700px){ .sentence{font-size:40px} .pic{font-size:90px} .hello h1{font-size:38px} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="micbar"></div>
+<script>
+/* ---------- data ---------- */
+const STORIES = [
+  {id:"cat", title:"The Cat", em:"🐱", pages:[
+    {pic:"🐱", text:"I see a cat."},
+    {pic:"🐱🎩", text:"The cat has a hat."},
+    {pic:"🐱💤", text:"The cat can nap."},
+    {pic:"🐱☀️", text:"The cat is in the sun."}]},
+  {id:"dog", title:"Big Dog", em:"🐶", pages:[
+    {pic:"🐶", text:"I see a big dog."},
+    {pic:"🐶🏃", text:"The dog can run."},
+    {pic:"🐶🦴", text:"The dog has a bone."},
+    {pic:"🐶❤️", text:"I like the dog."}]},
+  {id:"bus", title:"Go, Bus, Go!", em:"🚌", pages:[
+    {pic:"🚌", text:"See the red bus."},
+    {pic:"🚌💨", text:"Go, bus, go!"},
+    {pic:"🚌🛑", text:"The bus can stop."},
+    {pic:"🚌🏫", text:"We go on the bus."}]},
+  {id:"snow", title:"Snow Day", em:"⛄", pages:[
+    {pic:"❄️", text:"It is a snow day."},
+    {pic:"⛄", text:"We make a big snowman."},
+    {pic:"⛷️", text:"Dad and I go ski."},
+    {pic:"☕", text:"Mom has hot cocoa for me."}]},
+  {id:"frog", title:"The Frog", em:"🐸", pages:[
+    {pic:"🐸", text:"A frog sat on a log."},
+    {pic:"🐸⬆️", text:"The frog can hop."},
+    {pic:"🐸🪰", text:"The frog got a bug."},
+    {pic:"🐸💦", text:"Hop, hop, in the pond!"}]},
+  {id:"moon", title:"Good Night", em:"🌙", pages:[
+    {pic:"🌙", text:"I see the moon."},
+    {pic:"⭐", text:"I see a star."},
+    {pic:"🛏️", text:"I go to my bed."},
+    {pic:"😴", text:"Good night, Thomas!"}]},
+];
+const LETTERS = {A:["🍎","apple"],B:["⚽","ball"],C:["🐱","cat"],D:["🐶","dog"],E:["🥚","egg"],F:["🐟","fish"],G:["🐐","goat"],H:["🎩","hat"],
+  I:["🦎","iguana"],J:["🧃","juice"],K:["🪁","kite"],L:["🦁","lion"],M:["🌙","moon"],N:["🪺","nest"],O:["🐙","octopus"],P:["🐷","pig"],
+  Q:["👑","queen"],R:["🤖","robot"],S:["☀️","sun"],T:["🚂","train"],U:["☂️","umbrella"],V:["🎻","violin"],W:["🐋","whale"],X:["📦","box"],
+  Y:["🪀","yo-yo"],Z:["🦓","zebra"]};
+const SIGHT = ["I","a","the","see","can","we","like","my","go","is","to","and","you","it","in","up","look","me","said","big","red","run","play","here","mom","dad","no","yes","at","on"];
+const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTH_EM = ["⛄","❤️","🍀","🌧️","🌷","☀️","🎆","🏖️","🍎","🎃","🦃","🎄"];
+const COLORS = ["#ff5d5d","#ff8c42","#ffb400","#2ec27e","#3fa9f5","#5b3df5","#c04dd9","#ff7eb6","#14b8a6","#f97316","#8b5cf6","#0ea5e9"];
+const COUNT_EM = ["🍎","⭐","🐶","🚗","🦆","🍪","🎈","🐸","🌸","🚀"];
+
+/* ---------- storage (best effort) ---------- */
+const store = {
+  get(k,d){try{const v=localStorage.getItem("thomas-"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("thomas-"+k,JSON.stringify(v))}catch(e){}}
+};
+let stars = store.get("stars",0);
+let storyStars = store.get("storyStars",{});
+
+/* ---------- speech ---------- */
+let voice=null, runId=0;
+function pickVoice(){
+  try{
+    const vs=speechSynthesis.getVoices().filter(v=>/^en[-_]US/i.test(v.lang));
+    voice = vs.find(v=>/Samantha|Ava|Allison|Google US/i.test(v.name)) || vs[0] || null;
+  }catch(e){}
+}
+try{ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }catch(e){}
+function say(text,rate=0.82){
+  return new Promise(res=>{
+    try{
+      const u=new SpeechSynthesisUtterance(text);
+      u.rate=rate; u.pitch=1.1; u.lang="en-US"; if(voice)u.voice=voice;
+      let done=false; const fin=()=>{if(!done){done=true;res()}};
+      u.onend=fin; u.onerror=fin;
+      setTimeout(fin, 900 + text.length*140);
+      speechSynthesis.speak(u);
+    }catch(e){res()}
+  });
+}
+function hush(){ runId++; try{speechSynthesis.cancel()}catch(e){} }
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------- microphone (speech recognition) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let micBlocked = !SR, curListen = null;
+const NUMW=["zero","one","two","three","four","five","six","seven","eight","nine","ten"];
+const SOUNDALIKE={to:["two","too"],i:["eye","hi","aye"],see:["sea","c"],a:["uh","ah"],in:["and","an","n"],no:["know"],red:["read"],
+  ski:["sky","skee"],for:["four","fore"],hop:["hot","hob","pop"],log:["dog","lock","logs"],bug:["bud","buck","bugs"],my:["mine","mai"],
+  cat:["kat","cap","kit"],run:["ran"],big:["pig"],yes:["yeah","yep"],we:["wee","whee"],you:["u","ya"],sun:["son"],night:["knight"],
+  moon:["noon"],hat:["had","that"],nap:["map","nab"],dad:["dead","dan","daddy"],mom:["mum","mama","mommy","mam"],sat:["set"],got:["god"],
+  can:["could"],is:["his","as"],it:["at"],at:["it"],on:["an"],the:["a","da","duh"],me:["mi"],up:["op"],go:["goes"],said:["set","sad"],
+  look:["luke"],play:["plays"],here:["hear"],has:["haz","his"],bus:["bus's","buzz"],pond:["pawn","pon"],bone:["bun"],thomas:["tom","tommy"]};
+const LETTER_NAMES={A:["a","eh","hey","ay"],B:["b","be","bee"],C:["c","see","sea","she"],D:["d","dee","the"],E:["e","ee"],F:["f","ef","eff"],
+  G:["g","gee","jee"],H:["h","age","aitch","each"],I:["i","eye","aye","hi"],J:["j","jay"],K:["k","kay","okay","ok"],L:["l","el","elle"],
+  M:["m","em","um"],N:["n","en","and","in"],O:["o","oh","owe"],P:["p","pee","pea"],Q:["q","queue","cue","cute"],R:["r","are","our","or"],
+  S:["s","es","ess","yes"],T:["t","tea","tee"],U:["u","you"],V:["v","vee","be"],W:["w","double","doubleyou"],X:["x","ex","eggs"],
+  Y:["y","why","wise"],Z:["z","zee","zed","c"]};
+const norm=w=>String(w).toLowerCase().replace(/[^a-z0-9']/g,"").replace(/'s$/,"").replace(/'/g,"");
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
+function sameWord(heard,target){
+  const h=norm(heard), t=norm(target); if(!h||!t) return false;
+  if(h===t) return true;
+  if(/^\d+$/.test(h) && NUMW[+h]===t) return true;
+  if((SOUNDALIKE[t]||[]).includes(h)) return true;
+  if(t.length>=4 && lev(h,t)<=1) return true;
+  if(t.length>=7 && lev(h,t)<=2) return true;
+  return false;
+}
+const splitWords=t=>t.split(/\s+/).map(norm).filter(Boolean);
+function micBar(html){const b=document.getElementById("micbar"); if(html==null){b.classList.remove("show");return} b.innerHTML=html; b.classList.add("show");}
+function micHelp(){
+  toast("🎤 Mic not available here");
+  say("The microphone does not work here. Ask a grown up for help.");
+}
+function stopListening(){ if(curListen){ curListen.stop(); } }
+/* listen({onText(fullText), maxMs, onStop(reason, text)}) -> controller {stop(success)} */
+function listen({onText, maxMs=15000, onStop}){
+  stopListening(); hush();
+  if(micBlocked){ micHelp(); onStop&&onStop("unavailable",""); return null; }
+  let active=true, finalText="", lastText="", r=null, ended=false;
+  const deadline=Date.now()+maxMs;
+  const ctl={ stop(){ if(!active) return; active=false; try{r&&r.stop()}catch(e){} finish("stopped"); } };
+  function finish(reason){ if(ended) return; ended=true; active=false; curListen=null; micBar(null);
+    document.querySelectorAll(".mic").forEach(b=>b.classList.remove("live")); onStop&&onStop(reason,lastText); }
+  function start(){
+    try{ r=new SR(); }catch(e){ micBlocked=true; micHelp(); finish("unavailable"); return; }
+    r.lang="en-US"; r.continuous=true; r.interimResults=true; r.maxAlternatives=1;
+    r.onresult=e=>{ let interim="";
+      for(let i=e.resultIndex;i<e.results.length;i++){ const res=e.results[i];
+        if(res.isFinal) finalText+=" "+res[0].transcript; else interim+=" "+res[0].transcript; }
+      lastText=(finalText+" "+interim).trim();
+      micBar(`🎤 <b>Listening…</b> I heard: “${lastText.replace(/</g,"")}”`);
+      if(active) onText(lastText); };
+    r.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="audio-capture"){ micBlocked=true; active=false; micHelp(); finish("unavailable"); } };
+    r.onend=()=>{ if(active && Date.now()<deadline){ setTimeout(()=>{ if(active) start(); },150); } else finish(active?"timeout":"stopped"); };
+    try{ r.start(); }catch(e){ finish("error"); }
+  }
+  setTimeout(()=>{ if(active){ active=false; try{r&&r.stop()}catch(e){} finish("timeout"); } }, maxMs+1500);
+  micBar("🎤 <b>Listening…</b> Go ahead!");
+  curListen=ctl; start();
+  return ctl;
+}
+/* match a heard transcript against a target sentence; returns {next, missed:Set} */
+function alignWords(heard, target){
+  let t=0, j=0; const missed=new Set();
+  while(j<heard.length && t<target.length){
+    const h=heard[j];
+    if(sameWord(h,target[t])){ t++; j++; continue; }
+    if(j+1<heard.length && sameWord(h+heard[j+1],target[t])){ t++; j+=2; continue; }       // "snow man" -> snowman
+    if(t+1<target.length && sameWord(h,target[t+1])){ missed.add(t); t+=2; j++; continue; }  // skipped a word
+    j++;                                                                                     // extra/garbled word
+  }
+  return {next:t, missed};
+}
+/* voice answer for quizzes: accept(fn of heard word list) */
+function voiceAnswer(btn, accept, onRight, onWrongSay){
+  btn.classList.add("live");
+  let won=false;
+  listen({maxMs:7000,
+    onText(text){ if(!won && accept(splitWords(text))){ won=true; stopListening(); onRight(); } },
+    onStop(reason,text){ if(!won && reason!=="unavailable"){ say(text? `I heard ${text}. ${onWrongSay}` : `I did not hear you. ${onWrongSay}`); } }});
+}
+
+/* ---------- rewards ---------- */
+function addStar(n=1, msg){
+  stars+=n; store.set("stars",stars);
+  document.querySelectorAll(".jarcount").forEach(e=>e.textContent=stars);
+  burst(); if(msg) toast(msg);
+}
+function burst(){
+  const em=["⭐","🌟","✨","🎉"];
+  for(let i=0;i<14;i++){
+    const s=document.createElement("div"); s.className="burst"; s.textContent=em[i%em.length];
+    s.style.left=(innerWidth/2)+"px"; s.style.top=(innerHeight/2)+"px";
+    const a=Math.random()*Math.PI*2, d=180+Math.random()*220;
+    s.style.setProperty("--dx",Math.cos(a)*d+"px"); s.style.setProperty("--dy",Math.sin(a)*d+"px");
+    document.body.appendChild(s); setTimeout(()=>s.remove(),1200);
+  }
+}
+function toast(t){
+  const d=document.createElement("div"); d.className="toast"; d.textContent=t;
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1500);
+}
+const praise=()=>["Great job!","Super reading!","You did it!","Awesome!","High five!","Way to go, Thomas!"][Math.floor(Math.random()*6)];
+
+/* ---------- helpers ---------- */
+const app=document.getElementById("app");
+const h=(html)=>{app.innerHTML=html; window.scrollTo(0,0)};
+function bar(title){
+  return `<div class="bar"><button class="back" onclick="go('home')">⬅ Home</button><h2>${title}</h2>
+  <div class="jarchip">⭐ <span class="jarcount">${stars}</span></div></div>`;
+}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function pickOthers(pool,ans,n){return shuffle(pool.filter(x=>x!==ans)).slice(0,n)}
+const tokens=t=>t.split(/\s+/);
+const clean=w=>w.replace(/[^A-Za-z'\-]/g,"");
+
+/* ---------- router ---------- */
+const views={home,stories,letters,sight,calendar,counting,jar};
+function go(v,arg){ stopListening(); hush(); views[v](arg); }
+
+/* ---------- HOME ---------- */
+function home(){
+  const hour=new Date().getHours();
+  const hi = hour<12?"Good morning":hour<17?"Good afternoon":"Good evening";
+  h(`<div class="bar"><div></div><div></div><button class="jarchip" onclick="go('jar')">⭐ <span class="jarcount">${stars}</span></button></div>
+  <div class="hello"><h1>${hi}, Thomas! 👋</h1><p>What do you want to learn today?</p></div>
+  ${!SR?`<div class="note">Grown-ups: the 🎤 buttons need Safari on iPad (iOS 14.5+) with Siri &amp; Dictation turned on. Everything else works here.</div>`:""}
+  <div class="grid">
+    <button class="tile" style="background:var(--purple)" onclick="go('stories')"><span class="em">📖</span>Read Along<small>Stories to read</small></button>
+    <button class="tile" style="background:var(--pink)" onclick="go('letters')"><span class="em">🔤</span>Letters<small>A, B, C!</small></button>
+    <button class="tile" style="background:var(--green)" onclick="go('sight')"><span class="em">👀</span>Sight Words<small>Words to know</small></button>
+    <button class="tile" style="background:var(--blue)" onclick="go('calendar')"><span class="em">📅</span>Days &amp; Months<small>What day is it?</small></button>
+    <button class="tile" style="background:var(--orange)" onclick="go('counting')"><span class="em">🔢</span>Counting<small>1, 2, 3…</small></button>
+    <button class="tile" style="background:#e0a800" onclick="go('jar')"><span class="em">🫙</span>My Star Jar<small>See my stars</small></button>
+  </div>`);
+}
+
+/* ---------- STORIES ---------- */
+function stories(){
+  h(bar("Read Along 📖")+`<div class="story-list">${STORIES.map(s=>`
+    <button class="story-btn" onclick="go('stories_read','${s.id}')"><span class="em">${s.em}</span>${s.title}
+    <div class="stars">${"⭐".repeat(storyStars[s.id]||0)}</div></button>`).join("")}</div>`);
+}
+views.stories_read=function(id){
+  const s=STORIES.find(x=>x.id===id); let p=0;
+  function render(){
+    const pg=s.pages[p];
+    h(bar(s.title)+`<div class="card">
+      <div class="pic">${pg.pic}</div>
+      <div class="sentence" id="sent">${tokens(pg.text).map((w,i)=>`<button class="word" data-i="${i}">${w}</button>`).join("")}</div>
+      <div class="row">
+        <button class="big-btn" id="readme">🔊 Read to me</button>
+        <button class="big-btn mic" id="micread">🎤 I'll read it!</button>
+        <button class="big-btn pink" id="myturn">☝️ Touch &amp; read</button>
+      </div>
+      <div class="tip" id="tip">Tap any word to hear it. Press 🎤 and read out loud — the words light up as you say them!</div>
+      <div class="row" style="align-items:center">
+        <button class="big-btn ghost" id="prev" ${p===0?'style="visibility:hidden"':''}>⬅</button>
+        <div class="pager">${s.pages.map((_,i)=>`<span class="dot ${i===p?'cur':''}"></span>`).join("")}</div>
+        <button class="big-btn green" id="next">${p===s.pages.length-1?'Finish 🎉':'➡'}</button>
+      </div></div>`);
+    const words=[...document.querySelectorAll(".word")];
+    let turn=false, nextIdx=0;
+    words.forEach((el,i)=>el.onclick=()=>{
+      if(turn){
+        if(i===nextIdx){ el.classList.remove("dim"); el.classList.add("done"); nextIdx++; say(clean(el.textContent));
+          if(nextIdx===words.length){ turn=false; setTimeout(()=>{addStar(1,praise()); say(praise())},600); } }
+        else say(clean(el.textContent));
+      } else { hush(); words.forEach(w=>w.classList.remove("on")); el.classList.add("on"); say(clean(el.textContent),0.7).then(()=>el.classList.remove("on")); }
+    });
+    document.getElementById("readme").onclick=async()=>{
+      stopListening(); hush(); turn=false; const my=runId;
+      words.forEach(w=>w.classList.remove("on","done","dim","miss"));
+      for(const el of words){
+        if(my!==runId) return;
+        el.classList.add("on"); await say(clean(el.textContent),0.8); el.classList.remove("on"); el.classList.add("done");
+        await wait(120);
+      }
+      if(my===runId){ await wait(300); words.forEach(w=>w.classList.remove("done")); say(pg.text,0.85); }
+    };
+    document.getElementById("micread").onclick=(ev)=>{
+      const btn=ev.currentTarget;
+      if(curListen){ stopListening(); return; }            // tap again = "I'm done"
+      turn=false; const target=tokens(pg.text).map(clean);
+      words.forEach(w=>{w.classList.remove("on","done","miss");w.classList.add("dim")});
+      btn.classList.add("live"); btn.textContent="✋ I'm done";
+      let result={next:0,missed:new Set()}, won=false;
+      listen({maxMs:20000,
+        onText(text){
+          result=alignWords(splitWords(text),target);
+          words.forEach((el,i)=>{
+            el.classList.toggle("done", i<result.next && !result.missed.has(i));
+            el.classList.toggle("miss", result.missed.has(i));
+            el.classList.toggle("dim", i>=result.next);
+            el.classList.toggle("on", i===result.next);
+          });
+          if(result.next>=target.length && !won){ won=true; stopListening(); }
+        },
+        async onStop(reason){
+          btn.classList.remove("live"); btn.textContent="🎤 I'll read it!";
+          words.forEach(w=>w.classList.remove("on"));
+          if(reason==="unavailable"){ words.forEach(w=>w.classList.remove("dim")); return; }
+          const misses=[...result.missed];
+          for(let i=result.next;i<target.length;i++) misses.push(i);
+          misses.forEach(i=>{words[i].classList.remove("dim");words[i].classList.add("miss")});
+          if(misses.length===0){ addStar(2,"Perfect reading! 🎤⭐⭐"); await say("Perfect reading! "+praise()); }
+          else if(result.next>0 && misses.length<=Math.ceil(target.length/3)){
+            addStar(1,"Good reading! ⭐");
+            const w=target[misses[0]];
+            await say(`Good reading! Let's practice this word.`); await say(w,0.65);
+            document.getElementById("tip").textContent="Orange words need practice — tap them to hear, then try 🎤 again!";
+          } else {
+            await say(result.next===0?"I didn't hear the words. Press the microphone and read out loud!":"Good try! Tap the orange words to hear them, then try again.");
+            document.getElementById("tip").textContent="Orange words need practice — tap them to hear, then try 🎤 again!";
+          }
+        }});
+    };
+    document.getElementById("myturn").onclick=()=>{
+      stopListening(); hush(); turn=true; nextIdx=0; words.forEach(w=>{w.classList.remove("on","done");w.classList.add("dim")});
+      say("Your turn! Touch each word and read it.");
+    };
+    document.getElementById("prev").onclick=()=>{hush();p--;render()};
+    document.getElementById("next").onclick=()=>{
+      hush();
+      if(p<s.pages.length-1){p++;render()}
+      else{ storyStars[id]=Math.min(3,(storyStars[id]||0)+1); store.set("storyStars",storyStars);
+            addStar(3,"You read the whole story! ⭐⭐⭐"); say("You read the whole story! Three stars!"); setTimeout(()=>go("stories"),1800); }
+    };
+  }
+  render();
+};
+
+/* ---------- LETTERS ---------- */
+function letters(mode="grid"){
+  const keys=Object.keys(LETTERS);
+  const tabs=`<div class="tabs"><button class="${mode==='grid'?'sel':''}" onclick="go('letters','grid')">Learn letters</button>
+    <button class="${mode==='find'?'sel':''}" onclick="go('letters','find')">Find the letter</button></div>`;
+  if(mode==="grid"){
+    h(bar("Letters 🔤")+tabs+`<div class="card" id="lc" style="display:none;margin-bottom:18px"></div>
+      <div class="abc">${keys.map((k,i)=>`<button style="background:${COLORS[i%COLORS.length]}" data-k="${k}">${k}</button>`).join("")}</div>`);
+    document.querySelectorAll(".abc button").forEach(b=>b.onclick=()=>{
+      const k=b.dataset.k,[em,word]=LETTERS[k],lc=document.getElementById("lc");
+      lc.style.display="block";
+      lc.innerHTML=`<div class="center"><div class="letter-big">${k}<span>${k.toLowerCase()}</span></div>
+        <div style="font-size:90px">${em}</div><div class="title" style="font-size:44px"><b style="color:var(--pink)">${word[0]}</b>${word.slice(1)}</div>
+        <div class="row"><button class="big-btn mic" id="saylet">🎤 Say the letter</button></div></div>`;
+      document.getElementById("saylet").onclick=(ev)=>voiceAnswer(ev.currentTarget,
+        hw=>hw.some(x=>LETTER_NAMES[k].includes(x)||x===k.toLowerCase()||sameWord(x,word)),
+        ()=>{addStar(1,praise());say(`Yes! ${k}!`)}, `This letter is ${k}. Try again!`);
+      window.scrollTo({top:0,behavior:"smooth"});
+      hush(); say(`${k}. ${k} is for ${word}.`,0.8);
+    });
+  } else {
+    const ans=keys[Math.floor(Math.random()*26)];
+    const opts=shuffle([ans,...pickOthers(keys,ans,3)]);
+    h(bar("Letters 🔤")+tabs+`<div class="card center">
+      <div class="q">Find the letter… <button class="big-btn ghost" id="again">🔊</button></div>
+      <div class="choices">${opts.map(o=>`<button class="choice" style="font-size:80px;min-width:150px" data-v="${o}">${Math.random()<.5?o:o.toLowerCase()}</button>`).join("")}</div></div>`);
+    const ask=()=>say(`Find the letter ${ans}.`);
+    ask(); document.getElementById("again").onclick=ask;
+    document.querySelectorAll(".choice").forEach(c=>c.onclick=()=>{
+      if(c.dataset.v===ans){c.classList.add("right");addStar(1,praise());say(`Yes! That is ${ans}!`).then(()=>go("letters","find"))}
+      else{c.classList.add("wrong");say(`That is ${c.dataset.v}. Try again!`)}
+    });
+  }
+}
+
+/* ---------- SIGHT WORDS ---------- */
+function sight(mode="cards"){
+  const tabs=`<div class="tabs"><button class="${mode==='cards'?'sel':''}" onclick="go('sight','cards')">Flash cards</button>
+    <button class="${mode==='find'?'sel':''}" onclick="go('sight','find')">Find the word</button></div>`;
+  if(mode==="cards"){
+    let deck=shuffle(SIGHT), i=0;
+    const render=()=>{
+      const w=deck[i];
+      h(bar("Sight Words 👀")+tabs+`<div class="card center">
+        <div class="muted" style="font-size:20px">Card ${i+1} of ${deck.length}</div>
+        <div class="sight">${w}</div>
+        <div class="row"><button class="big-btn mic" id="sayit">🎤 Say it!</button><button class="big-btn ghost" id="hear">🔊 Hear it</button></div>
+        <div class="row"><button class="big-btn green" id="got">✅ I read it!</button><button class="big-btn orange" id="skip">🔁 Practice later</button></div>
+        <div class="tip">Press 🎤 and read the word out loud. Grown-ups can also tap ✅.</div></div>`);
+      document.getElementById("sayit").onclick=(ev)=>voiceAnswer(ev.currentTarget,
+        hw=>hw.some(x=>sameWord(x,w)),
+        ()=>{addStar(1,praise());say(w+"! "+praise());i=(i+1)%deck.length;setTimeout(render,1400)},
+        `This word says ${w}. Try again!`);
+      document.getElementById("hear").onclick=()=>{hush();say(w,0.7)};
+      document.getElementById("got").onclick=()=>{addStar(1,praise());say(w+"! "+praise());i=(i+1)%deck.length;setTimeout(render,900)};
+      document.getElementById("skip").onclick=()=>{deck.push(w);i=(i+1)%deck.length;render()};
+    };
+    render();
+  } else {
+    const ans=SIGHT[Math.floor(Math.random()*SIGHT.length)];
+    const opts=shuffle([ans,...pickOthers(SIGHT,ans,2)]);
+    h(bar("Sight Words 👀")+tabs+`<div class="card center">
+      <div class="q">Find the word… <button class="big-btn ghost" id="again">🔊</button></div>
+      <div class="choices">${opts.map(o=>`<button class="choice" style="font-size:60px" data-v="${o}">${o}</button>`).join("")}</div></div>`);
+    const ask=()=>say(`Find the word: ${ans}.`);
+    ask(); document.getElementById("again").onclick=ask;
+    document.querySelectorAll(".choice").forEach(c=>c.onclick=()=>{
+      if(c.dataset.v===ans){c.classList.add("right");addStar(1,praise());say(`Yes! ${ans}!`).then(()=>go("sight","find"))}
+      else{c.classList.add("wrong");say(`That says ${c.dataset.v}. Try again!`)}
+    });
+  }
+}
+
+/* ---------- DAYS & MONTHS ---------- */
+function calendar(mode="days"){
+  const now=new Date(), d=now.getDay(), m=now.getMonth();
+  const tabs=`<div class="tabs">${[["days","Days of the week"],["today","Today"],["months","Months"],["quiz","Quiz"]].map(([k,l])=>
+    `<button class="${mode===k?'sel':''}" onclick="go('calendar','${k}')">${l}</button>`).join("")}</div>`;
+  if(mode==="days"||mode==="months"){
+    const list=mode==="days"?DAYS:MONTHS, cur=mode==="days"?d:m;
+    h(bar("Days & Months 📅")+tabs+`<div class="row" style="margin:0 0 18px"><button class="big-btn" id="sing">🎵 Say them all</button></div>
+      <div class="seq ${mode==='months'?'months':''}">${list.map((x,i)=>`<button style="background:${COLORS[i]}" data-i="${i}">
+        <span class="n">${mode==='months'?MONTH_EM[i]:i+1}</span>${x}${i===cur?`<span class="today">${mode==='days'?'today':'now'}</span>`:''}</button>`).join("")}</div>`);
+    const btns=[...document.querySelectorAll(".seq button")];
+    btns.forEach(b=>b.onclick=()=>{hush();btns.forEach(x=>x.classList.remove("on"));b.classList.add("on");say(list[b.dataset.i]).then(()=>b.classList.remove("on"))});
+    document.getElementById("sing").onclick=async()=>{
+      hush(); const my=runId;
+      for(const b of btns){ if(my!==runId)return; b.classList.add("on"); await say(list[b.dataset.i],0.9); b.classList.remove("on"); }
+      if(my===runId){ addStar(1,praise()); }
+    };
+  } else if(mode==="today"){
+    const yest=DAYS[(d+6)%7], tom=DAYS[(d+1)%7];
+    const dateTxt=`${DAYS[d]}, ${MONTHS[m]} ${now.getDate()}`;
+    h(bar("Days & Months 📅")+tabs+`<div class="card">
+      <div class="todaycard">
+        <div><div class="lbl">Yesterday was</div><div class="val">${yest}</div></div>
+        <div class="mid"><div class="lbl">Today is</div><div class="val">${DAYS[d]}</div></div>
+        <div><div class="lbl">Tomorrow will be</div><div class="val">${tom}</div></div>
+      </div>
+      <div class="center" style="margin-top:22px"><div style="font-size:80px">${MONTH_EM[m]}</div>
+      <div class="title" style="font-size:40px">${dateTxt}</div></div>
+      <div class="row"><button class="big-btn" id="tell">🔊 Tell me</button></div></div>`);
+    document.getElementById("tell").onclick=()=>{hush();say(`Today is ${dateTxt}. Yesterday was ${yest}. Tomorrow will be ${tom}.`)};
+  } else {
+    const kinds=[
+      ()=>{const i=Math.floor(Math.random()*7);return{q:`What day comes after ${DAYS[i]}?`,a:DAYS[(i+1)%7],pool:DAYS}},
+      ()=>{const i=Math.floor(Math.random()*7);return{q:`What day comes before ${DAYS[i]}?`,a:DAYS[(i+6)%7],pool:DAYS}},
+      ()=>({q:"What day is today?",a:DAYS[d],pool:DAYS}),
+      ()=>({q:"What day is tomorrow?",a:DAYS[(d+1)%7],pool:DAYS}),
+      ()=>{const i=Math.floor(Math.random()*12);return{q:`What month comes after ${MONTHS[i]}?`,a:MONTHS[(i+1)%12],pool:MONTHS}},
+      ()=>({q:"What month is it now?",a:MONTHS[m],pool:MONTHS}),
+    ];
+    const Q=kinds[Math.floor(Math.random()*kinds.length)]();
+    const opts=shuffle([Q.a,...pickOthers(Q.pool,Q.a,2)]);
+    h(bar("Days & Months 📅")+tabs+`<div class="card center"><div class="q">${Q.q} <button class="big-btn ghost" id="again">🔊</button></div>
+      <div class="choices">${opts.map(o=>`<button class="choice" data-v="${o}">${o}</button>`).join("")}</div>
+      <div class="row"><button class="big-btn mic" id="sayans">🎤 Say the answer</button></div></div>`);
+    const ask=()=>say(Q.q); ask(); document.getElementById("again").onclick=ask;
+    document.getElementById("sayans").onclick=(ev)=>voiceAnswer(ev.currentTarget,
+      hw=>hw.some(x=>sameWord(x,Q.a)),
+      ()=>{document.querySelector(`.choice[data-v="${Q.a}"]`).classList.add("right");addStar(1,praise());say(`Yes! ${Q.a}!`).then(()=>go("calendar","quiz"))},
+      "Try again!");
+    document.querySelectorAll(".choice").forEach(c=>c.onclick=()=>{
+      if(c.dataset.v===Q.a){c.classList.add("right");addStar(1,praise());say(`Yes! ${Q.a}!`).then(()=>go("calendar","quiz"))}
+      else{c.classList.add("wrong");say(`Not ${c.dataset.v}. Try again!`)}
+    });
+  }
+}
+
+/* ---------- COUNTING ---------- */
+function counting(){
+  const n=1+Math.floor(Math.random()*10), em=COUNT_EM[Math.floor(Math.random()*COUNT_EM.length)];
+  h(bar("Counting 🔢")+`<div class="card center">
+    <div class="q">Touch each one and count! <button class="big-btn ghost" id="again">🔊</button></div>
+    <div class="count-area">${Array.from({length:n},(_,i)=>`<button class="obj" data-i="${i}">${em}</button>`).join("")}</div>
+    <div class="q" style="font-size:30px;margin-top:10px">How many?</div>
+    <div class="choices" id="ch"></div>
+    <div class="row"><button class="big-btn mic" id="sayans">🎤 Say how many</button></div></div>`);
+  let c=0;
+  const ask=()=>say("Touch each one and count. How many are there?"); ask();
+  document.getElementById("again").onclick=ask;
+  document.querySelectorAll(".obj").forEach(o=>o.onclick=()=>{
+    if(o.classList.contains("counted"))return;
+    c++; o.classList.add("counted"); o.insertAdjacentHTML("beforeend",`<span class="num">${c}</span>`); hush(); say(String(c),0.9);
+  });
+  const opts=new Set([n]); while(opts.size<3){const x=Math.max(1,Math.min(10,n+Math.floor(Math.random()*5)-2)); opts.add(x)}
+  const ch=document.getElementById("ch");
+  ch.innerHTML=shuffle([...opts]).map(o=>`<button class="choice" style="font-size:56px;min-width:120px" data-v="${o}">${o}</button>`).join("");
+  ch.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{
+    if(+b.dataset.v===n){b.classList.add("right");addStar(1,praise());say(`Yes! ${n}!`).then(()=>go("counting"))}
+    else{b.classList.add("wrong");say("Let's count again!")}
+  });
+  document.getElementById("sayans").onclick=(ev)=>voiceAnswer(ev.currentTarget,
+    hw=>hw.some(x=>x===String(n)||x===NUMW[n]||(n===2&&(x==="to"||x==="too"))||(n===4&&x==="for")||(n===8&&x==="ate")),
+    ()=>{ch.querySelector(`.choice[data-v="${n}"]`).classList.add("right");addStar(1,praise());say(`Yes! ${n}!`).then(()=>go("counting"))},
+    "Let's count again!");
+}
+
+/* ---------- JAR ---------- */
+function jar(){
+  const shown=Math.min(stars,120);
+  h(bar("My Star Jar 🫙")+`<div class="card center">
+    <div class="title" style="font-size:42px">Thomas has <span class="jarcount">${stars}</span> stars!</div>
+    <div class="jar">${"⭐".repeat(shown)}</div>
+    <p class="muted" style="font-size:20px">${stars>shown?"The jar is overflowing! 🤩 ":""}Earn stars by reading, counting, and playing.</p>
+    <div class="row"><button class="big-btn ghost" id="hold" style="font-size:18px">Grown-ups: hold 3 seconds to empty the jar</button></div></div>`);
+  say(`You have ${stars} stars!`);
+  const b=document.getElementById("hold"); let t;
+  const start=()=>{t=setTimeout(()=>{stars=0;store.set("stars",0);storyStars={};store.set("storyStars",{});go("jar")},3000)};
+  const stop=()=>clearTimeout(t);
+  b.addEventListener("touchstart",start); b.addEventListener("mousedown",start);
+  ["touchend","touchcancel","mouseup","mouseleave"].forEach(e=>b.addEventListener(e,stop));
+}
+
+home();
+</script>
+<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
+</body>
+</html>

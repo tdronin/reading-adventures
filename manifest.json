@@ -1,0 +1,14 @@
+{
+  "name": "Thomas's Reading Adventures",
+  "short_name": "Reading",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fdf6ff",
+  "theme_color": "#5b3df5",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
